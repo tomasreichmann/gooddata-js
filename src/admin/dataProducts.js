@@ -25,7 +25,7 @@ export const transformDataProduct = (item) => {
 export const getDataProducts = (contractId, include) =>
     get(routes.interpolate(routes.CONTRACT_DATA_PRODUCTS, { contractId }, include && { include }))
         .then(data => ({
-            items: data.compositeResponse.data.dataProducts.items.map(transformDataProduct)
+            items: data.dataProducts.items.map(transformDataProduct)
         }));
 
 export const getDataProduct = (contractId, dataProductId, include, stats) =>
@@ -33,7 +33,7 @@ export const getDataProduct = (contractId, dataProductId, include, stats) =>
             routes.CONTRACT_DATA_PRODUCT, { contractId, dataProductId },
             Object.assign(include && { include }, stats && { stats })
         ))
-        .then(data => transformDataProduct(data.compositeResponse.data));
+        .then(data => transformDataProduct(data));
 
 export const createDataProduct = (contractId, dataProductId, domainIds) =>
     post(routes.interpolate(routes.CONTRACT_DATA_PRODUCTS, { contractId }), {
