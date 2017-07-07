@@ -28,10 +28,10 @@ export const getDataProducts = (contractId, include) =>
             items: data.dataProducts.items.map(transformDataProduct)
         }));
 
-export const getDataProduct = (contractId, dataProductId, include, stats) =>
+export const getDataProduct = (contractId, dataProductId, include, stats, state) =>
     get(routes.interpolate(
             routes.CONTRACT_DATA_PRODUCT, { contractId, dataProductId },
-            Object.assign(include && { include }, stats && { stats })
+            Object.assign(include && { include }, stats && { stats }, state && { state })
         ))
         .then(data => transformDataProduct(data));
 
