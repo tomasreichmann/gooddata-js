@@ -45,17 +45,6 @@ export const getDomainUsers = (contractId, domainId, query, paging) => {
     }));
 };
 
-const transformDomainProject = (item) => {
-    const project = item.project;
-    const params = routes.parse(project.link, routes.CONTRACT_DOMAIN_PROJECT);
-    return {
-        id: params.projectId,
-        contractId: params.contractId,
-        domainId: params.domainId,
-        ...project
-    };
-};
-
 export const getDomainProjects = (contractId, domainId, query, paging) => {
     if (paging && !paging.next) {
         return Promise.resolve({ items: [], paging: {} });
@@ -68,7 +57,7 @@ export const getDomainProjects = (contractId, domainId, query, paging) => {
         );
 
     return get(uri).then(result => ({
-        ...result.projects,
-        items: result.projects.items.map(transformDomainProject)
+        ...result.domainProjects,
+        items: result.domainProjects.items.map(item => item.project)
     }));
 };
