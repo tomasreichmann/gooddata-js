@@ -21,7 +21,7 @@ export const getDomains = (contractId, query) => {
         .then(result => ({ items: result.domains.items.map(transformDomain) })); // TODO: paging?
 };
 
-const transformDomainUser = (user) => {
+const transformDomainUser = ({user}) => {
     const params = routes.parse(user.links.domain, routes.CONTRACT_DOMAIN);
     return {
         id: user.login,
