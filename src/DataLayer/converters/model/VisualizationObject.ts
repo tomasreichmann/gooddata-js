@@ -87,6 +87,8 @@ export type CategoryCollection = 'attribute' | 'stack' | 'view' | 'trend' | 'seg
 
 export type VisualizationType = 'table' | 'line' | 'column' | 'bar' | 'pie' | 'doughnut' | 'combo';
 
+
+// TODO: Duplicate with typings IVisualizationObjectResponse
 export interface IVisualizationObject {
     meta: IVisualizationObjectMeta;
     content: IVisualizationObjectContent;

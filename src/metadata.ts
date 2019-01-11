@@ -6,9 +6,10 @@ import {
     flatten,
     pick
 } from 'lodash';
-import { AFM } from '@gooddata/typings';
+import { AFM, VisualizationObject } from '@gooddata/typings';
 import { getIn, handlePolling, queryString } from './util';
 import { ApiResponse, ApiResponseError, XhrModule } from './xhr';
+import { v4 as uuid } from 'uuid';
 
 import {
     IGetObjectsByQueryOptions, IGetObjectUsingOptions, SortDirection
@@ -665,6 +666,161 @@ export class MetadataModule {
                 })
                 .then(response => response.getData())
             );
+    }
+
+    /**
+     * Get matching referenceValue from mdObject reference by referenceId
+     *
+     * @method getMDOReferenceValue
+     * @param {VisualizationObject.IVisualizationObject} mdObject
+     * @param {String} referenceId
+     * @return {String} referenceValue null if referenceId not found in references
+     */
+    public getMDOReferenceValue(
+        mdObject: VisualizationObject.IVisualizationObject,
+        referenceId: string
+    ): string | null {
+        const references = mdObject && mdObject.content && mdObject.content.references;
+        return references && references[referenceId] || null;
+    }
+
+    /**
+     * Get matching referenceId from mdObject reference by referenceValue
+     *
+     * @method getMDOReferenceId
+     * @param {VisualizationObject.IVisualizationObject} mdObject
+     * @param {String} referenceValue
+     * @return {String} referenceId null if referenceValue not found in references
+     */
+    public getMDOReferenceId(
+        mdObject: VisualizationObject.IVisualizationObject,
+        referenceValue: string
+    ): string | null {
+        const references = mdObject && mdObject.content && mdObject.content.references;
+        return references
+            && Object.keys(references).find((referenceId: string) => references[referenceId] === referenceValue)
+            || null;
+    }
+
+    /**
+     * Get a unique id for an mdObject reference or use existing if the same value is already in reference
+     *
+     * @method generateMDOReferenceId
+     * @param {VisualizationObject.IVisualizationObject} mdObject - Optional
+     * @param {String} referenceValue - Optional
+     * @return {String} unique referenceId string
+     */
+    public generateMDOReferenceId(
+        mdObject?: VisualizationObject.IVisualizationObject,
+        referenceValue?: string
+    ): string {
+        return mdObject
+            && referenceValue
+            && this.getMDOReferenceId(mdObject, referenceValue)
+            || uuid().replace(/-/g, '');
+    }
+
+    // export function getColorMappingPredicate(
+    //     id: string,
+    //     references: VisualizationObject.IReferenceItems
+    // ): IHeaderPredicate {
+    //     return (header: IMappingHeader, _context: IHeaderPredicateContext): boolean => {
+    //         if (isMappingHeaderAttributeItem(header)) {
+    //             const attributeItemUri = references && references[id];
+    //             return attributeItemUri ? attributeItemUri === header.attributeHeaderItem.uri : false;
+    //         }
+
+    //         const headerLocalIdentifier = getMappingHeaderLocalIdentifier(header);
+    //         return headerLocalIdentifier ? headerLocalIdentifier === id : false;
+    //     };
+    // }
+
+    /**
+     * Get visualization by Uri and process data
+     *
+     * @method getVisualization
+     * @param {String} visualizationUri
+     */
+    public getVisualization(uri: string): Promise<VisualizationObject.IVisualizationObject> {
+        return this.getObjectDetails(uri)
+            .then((visualizationObject: VisualizationObject.IVisualizationObjectResponse) => {
+                console.log('visualizationObject', visualizationObject);
+
+                if (visualizationObject) {
+                    const mdObject = visualizationObject.visualizationObject;
+                    const adaptedVisualizationObject: VisualizationObject.IVisualizationObject = {
+                        ...mdObject
+                    };
+                    const mdObjectContent = mdObject && mdObject.content;
+
+                    const mdObjectReferences = mdObjectContent && mdObjectContent.references;
+
+                    // COLOR MAPPING ===
+                    // TODO: create properties interface
+                    const mdObjectProperties: any = mdObjectContent
+                        && mdObjectContent.properties
+                        && JSON.parse(mdObjectContent.properties).control;
+                    const mdObjectColorMapping = mdObjectProperties && mdObjectProperties.colorMapping;
+
+                    // TODO replace properties.colorMapping
+                    // TODO map properties.colorMapping to config.colorMapping in react components Visualization
+                    // or refactor so that properties.colorMapping is used directly
+                    // possibly export getColorMappingConfig
+                    const colorMapping = mdObjectProperties && mdObjectProperties.colorMapping.map(
+                        // TODO: extract interface
+                        (mapping: { id: string, color: string}) => {
+                            // TODO: port getColorMappingPredicate react components
+                            // src/components/visualizations/utils/color.ts
+                            // const predicate: IHeaderPredicate = getColorMappingPredicate(mdObject, mapping.id);
+                            // predicate might not even be needed any more
+                            const predicate = undefined;
+                            return {
+                                predicate,
+                                color: mapping.color
+                            };
+                        }
+                    );
+                    // === COLOR MAPPING
+
+                    // TODO replace referenceIds (uri) of attribute values in sorting locators
+
+                    // TODO replace referenceIds (uri) of attribute values in drilling
+
+                    return adaptedVisualizationObject;
+
+                }
+                return visualizationObject;
+            });
+    }
+
+    /**
+     * Save visualization
+     *
+     * @method saveVisualization
+     * @param {String} visualizationUri
+     */
+    public saveVisualization(mdObject: VisualizationObject.IVisualizationObject) {
+        // TODO generate references for colorMapping, sorting, drilling
+    }
+
+    /**
+     * Update visualization
+     *
+     * @method updateVisualization
+     * @param {String} visualizationUri
+     */
+    public updateVisualization(visualizationUri: string, mdObject: VisualizationObject.IVisualizationObject) {
+        // TODO generate references for colorMapping, sorting, drilling based on original references
+    }
+
+    /**
+     * Delete visualization
+     *
+     * @method deleteVisualization
+     * @param {String} visualizationUri
+     */
+    public deleteVisualization(visualizationUri: string) {
+        return this.deleteObject(visualizationUri);
     }
 
     /**
